@@ -1,0 +1,249 @@
+{% extends 'books/base.html' %}
+{% load static %}
+
+{% block title %}{{ book.title }} - Online Reader{% endblock %}
+
+{% block extra_head %}
+<style>
+body {
+    overflow: hidden;
+}
+
+.reader-container {
+    height: calc(100vh - 120px);
+    position: relative;
+}
+
+.reader-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.reader-frame {
+    width: 100%;
+    height: calc(100% - 80px);
+    border: none;
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+.reader-controls {
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    z-index: 1000;
+}
+
+.reader-controls .btn {
+    margin-left: 0.5rem;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.reader-controls .btn:hover {
+    background: white;
+    transform: scale(1.1);
+}
+
+.fullscreen-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: none;
+}
+
+.fullscreen-mode .fullscreen-btn {
+    display: block;
+}
+
+.fullscreen-mode .reader-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9998;
+    background: white;
+}
+
+.fullscreen-mode .reader-frame {
+    height: 100vh;
+}
+
+.fullscreen-mode .reader-header {
+    border-radius: 0;
+}
+
+.book-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.book-cover-small {
+    width: 50px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 0.25rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+.book-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.book-author {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .reader-container {
+        height: calc(100vh - 100px);
+    }
+    
+    .reader-header {
+        padding: 0.75rem;
+    }
+    
+    .book-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 0.5rem;
+    }
+    
+    .book-cover-small {
+        width: 40px;
+        height: 56px;
+    }
+    
+    .book-title {
+        font-size: 1rem;
+    }
+    
+    .book-author {
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="reader-container" id="readerContainer">
+    <div class="reader-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="book-info">
+                {% if book.image_url %}
+                <img src="{{ book.image_url }}" 
+                     alt="{{ book.title }}" 
+                     class="book-cover-small"
+                     onerror="this.style.display='none'">
+                {% endif %}
+                <div>
+                    <h5 class="book-title">{{ book.title|truncatechars:40 }}</h5>
+                    <p class="book-author">{{ book.get_authors_display|truncatechars:30 }}</p>
+                </div>
+            </div>
+            
+            <div class="reader-controls">
+                <button class="btn" onclick="toggleFullscreen()" title="Toggle Fullscreen">
+                    <i class="fas fa-expand"></i>
+                </button>
+                <button class="btn" onclick="goBack()" title="Go Back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <iframe src="{{ book.web_reader_url }}" 
+            class="reader-frame" 
+            id="readerFrame"
+            allowfullscreen>
+        <p>Your browser does not support iframes. 
+           <a href="{{ book.web_reader_url }}" target="_blank">Click here to read the book</a>
+        </p>
+    </iframe>
+</div>
+
+<button class="btn btn-primary fullscreen-btn" onclick="toggleFullscreen()" id="fullscreenBtn">
+    <i class="fas fa-compress"></i>
+</button>
+
+<script>
+let isFullscreen = false;
+
+function toggleFullscreen() {
+    const container = document.getElementById('readerContainer');
+    const body = document.body;
+    
+    if (!isFullscreen) {
+        // Enter fullscreen
+        container.classList.add('fullscreen-mode');
+        body.style.overflow = 'hidden';
+        isFullscreen = true;
+        
+        // Update button icon
+        document.querySelector('.reader-controls .fa-expand').classList.replace('fa-expand', 'fa-compress');
+        document.getElementById('fullscreenBtn').querySelector('i').classList.replace('fa-compress', 'fa-expand');
+        
+    } else {
+        // Exit fullscreen
+        container.classList.remove('fullscreen-mode');
+        body.style.overflow = '';
+        isFullscreen = false;
+        
+        // Update button icon
+        document.querySelector('.reader-controls .fa-compress').classList.replace('fa-compress', 'fa-expand');
+        document.getElementById('fullscreenBtn').querySelector('i').classList.replace('fa-expand', 'fa-compress');
+    }
+}
+
+function goBack() {
+    if (isFullscreen) {
+        toggleFullscreen();
+    }
+    window.history.back();
+}
+
+// Handle escape key to exit fullscreen
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && isFullscreen) {
+        toggleFullscreen();
+    }
+});
+
+// Handle iframe load events
+document.getElementById('readerFrame').addEventListener('load', function() {
+    console.log('Book reader loaded successfully');
+});
+
+// Handle iframe errors
+document.getElementById('readerFrame').addEventListener('error', function() {
+    console.error('Error loading book reader');
+    alert('Error loading the book reader. Please try again or contact support.');
+});
+
+// Prevent navigation away from page while reading
+window.addEventListener('beforeunload', function(e) {
+    if (isFullscreen) {
+        e.preventDefault();
+        e.returnValue = 'You are currently reading a book. Are you sure you want to leave?';
+        return e.returnValue;
+    }
+});
+</script>
+{% endblock %}
