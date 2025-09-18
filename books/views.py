@@ -14,6 +14,10 @@ from .forms import RegisterForm, LoginForm, ReviewForm, BookForm
 from django.db.models import Count
 import random
 from django.core.paginator import Paginator
+from django.core.cache import cache
+from django.utils.text import slugify
+import requests
+from django.conf import settings
 
 
 # # Signup
@@ -334,3 +338,28 @@ def google_book_reader(request, google_id):
     }
     
     return render(request, 'books/google_book_reader.html', context)
+
+def get_google_books(query, start_index=0, max_results=2):
+    # ✅ Sanitize the cache key
+    safe_query = slugify(query)
+    cache_key = f"google_books_search_{safe_query}_{start_index}_{max_results}"
+
+    # Try cache first
+    data = cache.get(cache_key)
+    if data:
+        return data
+
+    # Otherwise call the API
+    params = {
+        'q': query,
+        'startIndex': start_index,
+        'maxResults': max_results,
+        'key': settings.GOOGLE_BOOKS_API_KEY
+    }
+    url = settings.GOOGLE_BOOKS_API_BASE_URL
+    response = requests.get(url, params=params)
+    data = response.json()
+
+    # Save to cache
+    cache.set(cache_key, data, 60 * 60)  # 1 hour
+    return data
