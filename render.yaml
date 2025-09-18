@@ -14,3 +14,5 @@ services:
         generateValue: true
       - key: WEB_CONCURRENCY
         value: 4
+      - key: CLOUDINARY_URL
+        value: CLOUDINARY_URL=cloudinary://697955841318628:L1dddFGfRY2d0Fp4V78QU8f7pQQ@dfb4jsusf
