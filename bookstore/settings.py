@@ -343,3 +343,10 @@ GOOGLE_BOOKS_API_BASE_URL = 'https://www.googleapis.com/books/v1'
 # ===============================
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'default-cache',
+    }
+}
+
