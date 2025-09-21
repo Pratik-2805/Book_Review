@@ -3,7 +3,7 @@
 set -o errexit
 
 # Change to the bookstore directory
-cd bookstore
+# cd bookstore
 
 pip install -r requirements.txt
 
